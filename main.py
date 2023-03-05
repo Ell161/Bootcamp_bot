@@ -30,40 +30,51 @@ async def close_keyboard(callback: types.CallbackQuery) -> None:
 
 @dp.callback_query_handler()
 async def start_callback(callback: types.CallbackQuery):
-    if callback.data == 'Algorithms':
-        photo = open('img/algorithm.jpg', 'rb')
-        return await callback.bot.send_photo(chat_id=callback.message.chat.id,
-                                             photo=photo, caption=variables.Algorithms, parse_mode='HTML',
-                                             reply_markup=keyboards.inline_keyboard_algorithms)
-    elif callback.data == 'TCP/IP':
-        photo = open('img/server.jpg', 'rb')
-        return await callback.bot.send_photo(chat_id=callback.message.chat.id,
-                                             photo=photo, caption=variables.TCP_IP, parse_mode='HTML',
-                                             reply_markup=keyboards.inline_keyboard_TCP)
-    elif callback.data == 'Python':
-        photo = open('img/python.jpg', 'rb')
-        return await callback.bot.send_photo(chat_id=callback.message.chat.id,
-                                             photo=photo, caption=variables.Python, parse_mode='HTML',
-                                             reply_markup=keyboards.inline_keyboard_python)
-    elif callback.data == 'Multithreading':
-        photo = open('img/multithreading.jpg', 'rb')
-        return await callback.bot.send_photo(chat_id=callback.message.chat.id,
-                                             photo=photo, caption=variables.Multithreading, parse_mode='HTML',
-                                             reply_markup=keyboards.inline_keyboard_multithreading)
-
-
-@dp.callback_query_handler()
-async def algorithm_callback(callback: types.CallbackQuery):
-    if callback.data == 'algorithm complexity':
-        return await callback.answer(text='algorithm complexity')
-    elif callback.data == '5 pillars':
-        return await callback.answer(text='5 pillars')
-    elif callback.data == 'select sort':
-        return await callback.answer(text='select sort')
-    elif callback.data == 'quick sort':
-        return await callback.answer(text='quick sort')
-    elif callback.data == 'counting sort':
-        return await callback.answer(text='counting sort')
+    match callback.data:
+        case 'Algorithms':
+            photo = open('img/algorithm.jpg', 'rb')
+            return await callback.bot.send_photo(chat_id=callback.message.chat.id,
+                                                 photo=photo, caption=variables.Algorithms, parse_mode='HTML',
+                                                 reply_markup=keyboards.inline_keyboard_algorithms)
+        case 'TCP/IP':
+            photo = open('img/server.jpg', 'rb')
+            return await callback.bot.send_photo(chat_id=callback.message.chat.id,
+                                                 photo=photo, caption=variables.TCP_IP, parse_mode='HTML',
+                                                 reply_markup=keyboards.inline_keyboard_close)
+        case 'Python':
+            photo = open('img/python.jpg', 'rb')
+            return await callback.bot.send_photo(chat_id=callback.message.chat.id,
+                                                 photo=photo, caption=variables.Python, parse_mode='HTML',
+                                                 reply_markup=keyboards.inline_keyboard_python)
+        case 'Multithreading':
+            photo = open('img/multithreading.jpg', 'rb')
+            return await callback.bot.send_photo(chat_id=callback.message.chat.id,
+                                                 photo=photo, caption=variables.Multithreading, parse_mode='HTML',
+                                                 reply_markup=keyboards.inline_keyboard_close)
+        case 'algorithm complexity':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.algorithm_complexity, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
+        case 'pillars':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.pillars, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
+        case 'select sort':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.select_sort, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
+        case 'bubble sort':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.bubble_sort, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
+        case 'quick sort':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.quick_sort, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
+        case 'counting sort':
+            return await callback.bot.send_message(chat_id=callback.message.chat.id,
+                                                   text=variables.counting_sort, parse_mode='HTML',
+                                                   reply_markup=keyboards.inline_keyboard_close)
 
 
 if __name__ == '__main__':
