@@ -43,11 +43,11 @@ async def get_topic_description(id_topic):
     return value[0]
 
 
-#async def save_subtopic_db(state) -> None:
-#    async with state.proxy() as data:
-#        cursor.execute('INSERT INTO topics (photo_id, title, description) VALUES(?, ?, ?)',
-#                       (data['photo'], data['title'], data['description']))
-#        base.commit()
+async def save_subtopic_db(state) -> None:
+    async with state.proxy() as data:
+        cursor.execute('INSERT INTO subtopics (topic, title, head, description) VALUES(?, ?, ?, ?)',
+                       (data['title'], data['subtitle'], data['head'], data['description']))
+        base.commit()
 
 
 async def get_list_subtopics(id_topic):

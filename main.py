@@ -25,6 +25,8 @@ class FSMSubTopics(StatesGroup):
     """FSM class of states for subchapters"""
 
     title = State()
+    subtitle = State()
+    head = State()
     description = State()
 
 
@@ -133,6 +135,64 @@ async def get_description_topic(message: types.Message, state: FSMContext) -> No
         await database.save_topic_db(state)
         await message.answer(text=variables.final_create)
         await state.finish()
+
+
+@dp.message_handler(lambda message: message.from_user.id == admin_id, commands=['newsubtopic'], state=None)
+async def create_subtopic(message: types.Message) -> None:
+    """The function processes the administrator's request to create a new subchapter"""
+
+    await FSMSubTopics.title.set()
+    keyboard_select_topic = await keyboards.inline_keyboard_chapters()
+    await message.answer(text=variables.select_topic, reply_markup=keyboard_select_topic)
+
+
+@dp.callback_query_handler(state=FSMSubTopics.title)
+async def get_subtopic_title(callback_query: types.CallbackQuery, state: FSMContext) -> None:
+    """The function makes the subtitle by the administrator and transfers it to the next FSM waiting state"""
+
+    async with state.proxy() as data:
+        title = callback_query.data.split()
+        data["title"] = title[1]
+    await FSMSubTopics.next()
+    await callback_query.message.answer(text=variables.get_subtitle)
+
+
+@dp.message_handler(state=FSMSubTopics.subtitle)
+async def get_subtitle(message: types.Message, state: FSMContext) -> None:
+    """The function receives data about the subchapter title and transfers it to the next FSM waiting state."""
+
+    if len(message.text) > 50:
+        await message.reply(text=variables.too_long)
+    else:
+        async with state.proxy() as data:
+            data['subtitle'] = message.text
+        await FSMSubTopics.next()
+        await message.answer(text=variables.get_head)
+
+
+@dp.message_handler(state=FSMSubTopics.head)
+async def get_head_subtopic(message: types.Message, state: FSMContext) -> None:
+    """The function receives data about the subchapter head and transfers it to the next FSM waiting state."""
+
+    if len(message.text) > 255:
+        await message.reply(text=variables.too_long)
+    else:
+        async with state.proxy() as data:
+            data['head'] = message.text
+        await FSMSubTopics.next()
+        await message.answer(text=variables.get_desc)
+
+
+@dp.message_handler(state=FSMSubTopics.description)
+async def get_description_subtopic(message: types.Message, state: FSMContext) -> None:
+    """The function receives data about the subchapter description and  saves data to the database,
+    closes the state machine."""
+
+    async with state.proxy() as data:
+        data['description'] = message.text
+    await database.save_subtopic_db(state)
+    await message.answer(text=variables.final_create)
+    await state.finish()
 
 
 @dp.callback_query_handler()

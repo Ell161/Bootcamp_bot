@@ -7,7 +7,7 @@ async def inline_keyboard_chapters() -> InlineKeyboardMarkup:
     chapters_list = await database.get_topic_list()
     ikboard_chapters = InlineKeyboardMarkup(row_width=1)
     for topic in chapters_list:
-        button = InlineKeyboardButton(text=f'{topic[1]}', callback_data=f'topics {topic[0]}')
+        button = InlineKeyboardButton(text=f'{topic[0]}. {topic[1]}', callback_data=f'topics {topic[0]}')
         ikboard_chapters.add(button)
     return ikboard_chapters
 
