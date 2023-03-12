@@ -103,3 +103,23 @@ async def get_user_notes_for_subtopic(user_id, topic_id, subtopic_id):
     else:
         return None
 
+
+async def get_all_notes(user_id):
+    cursor.execute(f'SELECT ID_note, head, description FROM notes WHERE user_id = "{user_id}"')
+    value = cursor.fetchall()
+    base.commit()
+    return value
+
+
+async def delete_note(note_id):
+    cursor.execute(f'DELETE FROM notes WHERE ID_note = "{note_id}"')
+    base.commit()
+
+
+async def update_note_db(state):
+    async with state.proxy() as data:
+        cursor.execute('UPDATE notes SET head = "{head}", description = "{description}" '
+                       'WHERE ID_note = "{note_id}"'.format(head=data['head'],
+                                                            description=data['description'],
+                                                            note_id=data['note_id']))
+    base.commit()

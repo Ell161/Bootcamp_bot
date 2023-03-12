@@ -31,6 +31,14 @@ async def inline_keyboard_close(id_topic, id_subtopic) -> InlineKeyboardMarkup:
     return ikeyboard_close
 
 
+async def change_note(note_id) -> InlineKeyboardMarkup:
+    ikeyboard_change = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text='🖍 Редактировать', callback_data=f'change_note {note_id}')],
+                         [InlineKeyboardButton(text='🚯 Удалить', callback_data=f'delete_note {note_id}')]],
+        row_width=1)
+    return ikeyboard_change
+
+
 ikeyboard_close_notes = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text='🔺 Закрыть 🔺', callback_data='close')]],
         row_width=1)

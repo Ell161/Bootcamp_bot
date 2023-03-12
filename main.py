@@ -35,8 +35,6 @@ class FSMSubTopics(StatesGroup):
 class FSMNotes(StatesGroup):
     """FSM class of states for notes"""
 
-#    topic = State()
-#    subtopic = State()
     head = State()
     description = State()
 
@@ -69,6 +67,20 @@ async def command_content(message: types.Message) -> None:
     keyboard_content = await keyboards.inline_keyboard_chapters()
     await bot.send_message(chat_id=message.from_user.id, text=variables.content, reply_markup=keyboard_content)
     await message.delete()
+
+
+@dp.message_handler(commands=['change'])
+async def command_content(message: types.Message) -> None:
+    """TThe function delete a note"""
+
+    await message.delete()
+    note_list = await database.get_all_notes(user_id=message.from_user.id)
+    if len(note_list) >= 1:
+        for note in note_list:
+            ikeyboard_delete = await keyboards.change_note(note_id=note[0])
+            await bot.send_message(chat_id=message.from_user.id,
+                                   text=f'<b>{note[1]}</b>\n\n<i>{note[2]}</i>',
+                                   reply_markup=ikeyboard_delete)
 
 
 @dp.message_handler(commands=['cancel'], state='*')
@@ -138,7 +150,7 @@ async def get_head_topic(message: types.Message, state: FSMContext) -> None:
 async def get_description_topic(message: types.Message, state: FSMContext) -> None:
     """The function receives data about the chapter description and  saves data to the database,
     closes the state machine."""
-    
+
     if len(message.text) > 970:
         await message.reply(text=variables.too_long)
     else:
@@ -208,43 +220,6 @@ async def get_description_subtopic(message: types.Message, state: FSMContext) ->
     await state.finish()
 
 
-@dp.callback_query_handler()
-async def content_desc(callback: types.CallbackQuery, state: FSMContext):
-    callback_info = callback.data.split()
-    if callback_info[0] == 'close':
-        await callback.message.delete()
-    elif callback_info[0] == 'topics':
-        topic = await database.get_topic_description(callback_info[1])
-        ikboard_subchapters = await keyboards.inline_keyboard_subchapters(id_topic=callback_info[1])
-        await bot.send_photo(chat_id=callback.message.chat.id, photo=topic[0],
-                             caption=f'<b>{topic[2]}</b>\n\n<i>{topic[3]}</i>',
-                             reply_markup=ikboard_subchapters)
-        user_notes = await database.get_user_notes_for_topic(user_id=callback.from_user.id,
-                                                             topic_id=callback_info[1])
-        if user_notes is not None:
-            await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
-                                   reply_markup=keyboards.ikeyboard_close_notes)
-    elif callback_info[0] == 'subtopics':
-        subtopic = await database.get_subtopic_description(callback_info[2])
-        ikeyboard_close = await keyboards.inline_keyboard_close(id_topic=callback_info[1], id_subtopic=callback_info[2])
-        await bot.send_message(chat_id=callback.message.chat.id,
-                               text=f'<b>{subtopic[0]}</b>\n\n<i>{subtopic[1]}</i>',
-                               reply_markup=ikeyboard_close)
-        user_notes = await database.get_user_notes_for_subtopic(user_id=callback.from_user.id,
-                                                                topic_id=callback_info[1],
-                                                                subtopic_id=callback_info[2])
-        if user_notes is not None:
-            await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
-                                   reply_markup=keyboards.ikeyboard_close_notes)
-    elif callback_info[0] == 'note':
-        await FSMNotes.head.set()
-        async with state.proxy() as data:
-            data['user_id'] = callback.from_user.id
-            data['topic'] = callback_info[1]
-            data['subtopic'] = callback_info[2]
-        await callback.message.answer(text=variables.get_head)
-
-
 @dp.message_handler(state=FSMNotes.head)
 async def get_head_note(message: types.Message, state: FSMContext) -> None:
     """The function receives data about the subchapter head and transfers it to the next FSM waiting state."""
@@ -265,9 +240,68 @@ async def get_description_note(message: types.Message, state: FSMContext) -> Non
 
     async with state.proxy() as data:
         data['description'] = message.text
-    await database.save_note_db(state)
+    try:
+        await state.get_data(data['note_id'])
+        await database.update_note_db(state)
+    except KeyError:
+        await database.save_note_db(state)
     await message.answer(text=variables.final_create)
     await state.finish()
+
+
+@dp.callback_query_handler()
+async def content_desc(callback: types.CallbackQuery, state: FSMContext):
+    callback_info = callback.data.split()
+    action = callback_info[0]
+
+    match action:
+        case 'close':
+            await callback.message.delete()
+
+        case 'topics':
+            topic = await database.get_topic_description(callback_info[1])
+            ikboard_subchapters = await keyboards.inline_keyboard_subchapters(id_topic=callback_info[1])
+            await bot.send_photo(chat_id=callback.message.chat.id, photo=topic[0],
+                                 caption=f'<b>{topic[2]}</b>\n\n<i>{topic[3]}</i>',
+                                 reply_markup=ikboard_subchapters)
+            user_notes = await database.get_user_notes_for_topic(user_id=callback.from_user.id,
+                                                                 topic_id=callback_info[1])
+            if user_notes is not None:
+                await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
+                                       reply_markup=keyboards.ikeyboard_close_notes)
+
+        case 'subtopics':
+            subtopic = await database.get_subtopic_description(callback_info[2])
+            ikeyboard_close = await keyboards.inline_keyboard_close(id_topic=callback_info[1],
+                                                                    id_subtopic=callback_info[2])
+            await bot.send_message(chat_id=callback.message.chat.id,
+                                   text=f'<b>{subtopic[0]}</b>\n\n<i>{subtopic[1]}</i>',
+                                   reply_markup=ikeyboard_close)
+            user_notes = await database.get_user_notes_for_subtopic(user_id=callback.from_user.id,
+                                                                    topic_id=callback_info[1],
+                                                                    subtopic_id=callback_info[2])
+            if user_notes is not None:
+                await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
+                                       reply_markup=keyboards.ikeyboard_close_notes)
+
+        case 'note':
+            await FSMNotes.head.set()
+            async with state.proxy() as data:
+                data['user_id'] = callback.from_user.id
+                data['topic'] = callback_info[1]
+                data['subtopic'] = callback_info[2]
+            await callback.message.answer(text=variables.get_head)
+
+        case 'delete_note':
+            await database.delete_note(note_id=callback_info[1])
+            await callback.answer(text=variables.delete_info)
+            await callback.message.delete()
+
+        case 'change_note':
+            await FSMNotes.head.set()
+            async with state.proxy() as data:
+                data['note_id'] = callback_info[1]
+            await callback.message.answer(text=variables.get_head)
 
 
 @dp.message_handler()
