@@ -19,6 +19,13 @@ async def db_connect() -> None:
                                     title TEXT,
                                     head TEXT,
                                     description TEXT)""")
+    base.execute("""CREATE TABLE IF NOT EXISTS notes(
+                                        ID_note INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        user_id TEXT,
+                                        topic INTEGER,
+                                        subtopic INTEGER DEFAULT 0,
+                                        head TEXT,
+                                        description TEXT)""")
     base.commit()
 
 
@@ -55,3 +62,44 @@ async def get_list_subtopics(id_topic):
     value: List[tuple] = cursor.fetchall()
     base.commit()
     return value
+
+
+async def get_subtopic_description(id_subtopic):
+    cursor.execute(f'SELECT head, description FROM subtopics WHERE ID_subtopic = "{id_subtopic}"')
+    value = cursor.fetchall()
+    base.commit()
+    return value[0]
+
+
+async def save_note_db(state) -> None:
+    async with state.proxy() as data:
+        cursor.execute('INSERT INTO notes (user_id, topic, subtopic, head, description) VALUES(?, ?, ?, ?, ?)',
+                       (data['user_id'], data['topic'], data['subtopic'], data['head'], data['description']))
+        base.commit()
+
+
+async def get_user_notes_for_topic(user_id, topic_id):
+    cursor.execute(f'SELECT head, description FROM notes WHERE '
+                   f'(user_id = "{user_id}" AND topic = "{topic_id}" AND subtopic = "0")')
+    value = cursor.fetchall()
+    base.commit()
+    if len(value) >= 1:
+        notes = [f'<b>{note[0]}</b>\n\n<i>{note[1]}</i>' for note in value]
+        notes_str = '\n___________________________________________\n'.join(notes)
+        return notes_str
+    else:
+        return None
+
+
+async def get_user_notes_for_subtopic(user_id, topic_id, subtopic_id):
+    cursor.execute(f'SELECT head, description FROM notes WHERE '
+                   f'(user_id = "{user_id}" AND topic = "{topic_id}" AND subtopic = "{subtopic_id}")')
+    value = cursor.fetchall()
+    base.commit()
+    if len(value) >= 1:
+        notes = [f'<b>{note[0]}</b>\n\n<i>{note[1]}</i>' for note in value]
+        notes_str = '\n___________________________________________\n'.join(notes)
+        return notes_str
+    else:
+        return None
+

@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -26,6 +28,15 @@ class FSMSubTopics(StatesGroup):
 
     title = State()
     subtitle = State()
+    head = State()
+    description = State()
+
+
+class FSMNotes(StatesGroup):
+    """FSM class of states for notes"""
+
+#    topic = State()
+#    subtopic = State()
     head = State()
     description = State()
 
@@ -75,6 +86,7 @@ async def cansel_create(message: types.Message, state: FSMContext):
 async def create_topic(message: types.Message) -> None:
     """The function processes the administrator's request to create a new chapter"""
 
+    await message.delete()
     await FSMTopics.photo.set()
     await message.answer(text=variables.get_photo)
 
@@ -141,6 +153,7 @@ async def get_description_topic(message: types.Message, state: FSMContext) -> No
 async def create_subtopic(message: types.Message) -> None:
     """The function processes the administrator's request to create a new subchapter"""
 
+    await message.delete()
     await FSMSubTopics.title.set()
     keyboard_select_topic = await keyboards.inline_keyboard_chapters()
     await message.answer(text=variables.select_topic, reply_markup=keyboard_select_topic)
@@ -196,16 +209,65 @@ async def get_description_subtopic(message: types.Message, state: FSMContext) ->
 
 
 @dp.callback_query_handler()
-async def content_desc(callback: types.CallbackQuery):
-    cb_date = callback.data.split()
-    if cb_date[0] == 'close':
+async def content_desc(callback: types.CallbackQuery, state: FSMContext):
+    callback_info = callback.data.split()
+    if callback_info[0] == 'close':
         await callback.message.delete()
-    elif cb_date[0] == 'topics':
-        topic = await database.get_topic_description(cb_date[1])
-        ikboard_subchapters = await keyboards.inline_keyboard_subchapters(id_topic=cb_date[1])
+    elif callback_info[0] == 'topics':
+        topic = await database.get_topic_description(callback_info[1])
+        ikboard_subchapters = await keyboards.inline_keyboard_subchapters(id_topic=callback_info[1])
         await bot.send_photo(chat_id=callback.message.chat.id, photo=topic[0],
                              caption=f'<b>{topic[2]}</b>\n\n<i>{topic[3]}</i>',
                              reply_markup=ikboard_subchapters)
+        user_notes = await database.get_user_notes_for_topic(user_id=callback.from_user.id,
+                                                             topic_id=callback_info[1])
+        if user_notes is not None:
+            await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
+                                   reply_markup=keyboards.ikeyboard_close_notes)
+    elif callback_info[0] == 'subtopics':
+        subtopic = await database.get_subtopic_description(callback_info[2])
+        ikeyboard_close = await keyboards.inline_keyboard_close(id_topic=callback_info[1], id_subtopic=callback_info[2])
+        await bot.send_message(chat_id=callback.message.chat.id,
+                               text=f'<b>{subtopic[0]}</b>\n\n<i>{subtopic[1]}</i>',
+                               reply_markup=ikeyboard_close)
+        user_notes = await database.get_user_notes_for_subtopic(user_id=callback.from_user.id,
+                                                                topic_id=callback_info[1],
+                                                                subtopic_id=callback_info[2])
+        if user_notes is not None:
+            await bot.send_message(chat_id=callback.message.chat.id, text=user_notes,
+                                   reply_markup=keyboards.ikeyboard_close_notes)
+    elif callback_info[0] == 'note':
+        await FSMNotes.head.set()
+        async with state.proxy() as data:
+            data['user_id'] = callback.from_user.id
+            data['topic'] = callback_info[1]
+            data['subtopic'] = callback_info[2]
+        await callback.message.answer(text=variables.get_head)
+
+
+@dp.message_handler(state=FSMNotes.head)
+async def get_head_note(message: types.Message, state: FSMContext) -> None:
+    """The function receives data about the subchapter head and transfers it to the next FSM waiting state."""
+
+    if len(message.text) > 255:
+        await message.reply(text=variables.too_long)
+    else:
+        async with state.proxy() as data:
+            data['head'] = message.text
+        await FSMNotes.next()
+        await message.answer(text=variables.get_desc)
+
+
+@dp.message_handler(state=FSMNotes.description)
+async def get_description_note(message: types.Message, state: FSMContext) -> None:
+    """The function receives data about the subchapter description and  saves data to the database,
+    closes the state machine."""
+
+    async with state.proxy() as data:
+        data['description'] = message.text
+    await database.save_note_db(state)
+    await message.answer(text=variables.final_create)
+    await state.finish()
 
 
 @dp.message_handler()
