@@ -123,3 +123,31 @@ async def update_note_db(state):
                                                             description=data['description'],
                                                             note_id=data['note_id']))
     base.commit()
+
+
+async def update_topic_db(state):
+    async with state.proxy() as data:
+        cursor.execute('''UPDATE topics SET 
+        photo_id = "{photo_id}", 
+        title = "{title}", 
+        head = "{head}", 
+        description = "{description}" 
+        WHERE ID_topic = "{topic_id}"'''.format(photo_id=data['photo'],
+                                                title=data['title'],
+                                                head=data['head'],
+                                                description=data['description'],
+                                                topic_id=data['topic_id']))
+    base.commit()
+
+
+async def update_subtopic_db(state):
+    async with state.proxy() as data:
+        cursor.execute('''UPDATE subtopics SET 
+        title = "{title}", 
+        head = "{head}", 
+        description = "{description}" 
+        WHERE ID_subtopic = "{subtopic_id}"'''.format(title=data['title'],
+                                                      head=data['head'],
+                                                      description=data['description'],
+                                                      subtopic_id=data['subtopic_id']))
+    base.commit()
