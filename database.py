@@ -78,32 +78,6 @@ async def save_note_db(state) -> None:
         base.commit()
 
 
-async def get_user_notes_for_topic(user_id, topic_id):
-    cursor.execute(f'SELECT head, description FROM notes WHERE '
-                   f'(user_id = "{user_id}" AND topic = "{topic_id}" AND subtopic = "0")')
-    value = cursor.fetchall()
-    base.commit()
-    if len(value) >= 1:
-        notes = [f'<b>{note[0]}</b>\n\n<i>{note[1]}</i>' for note in value]
-        notes_str = '\n___________________________________________\n'.join(notes)
-        return notes_str
-    else:
-        return None
-
-
-async def get_user_notes_for_subtopic(user_id, topic_id, subtopic_id):
-    cursor.execute(f'SELECT head, description FROM notes WHERE '
-                   f'(user_id = "{user_id}" AND topic = "{topic_id}" AND subtopic = "{subtopic_id}")')
-    value = cursor.fetchall()
-    base.commit()
-    if len(value) >= 1:
-        notes = [f'<b>{note[0]}</b>\n\n<i>{note[1]}</i>' for note in value]
-        notes_str = '\n___________________________________________\n'.join(notes)
-        return notes_str
-    else:
-        return None
-
-
 async def get_all_notes(user_id):
     cursor.execute(f'SELECT ID_note, head, description FROM notes WHERE user_id = "{user_id}"')
     value = cursor.fetchall()
@@ -131,7 +105,7 @@ async def update_topic_db(state):
         photo_id = "{photo_id}", 
         title = "{title}", 
         head = "{head}", 
-        description = "{description}" 
+        description = "{description}"
         WHERE ID_topic = "{topic_id}"'''.format(photo_id=data['photo'],
                                                 title=data['title'],
                                                 head=data['head'],
@@ -142,12 +116,21 @@ async def update_topic_db(state):
 
 async def update_subtopic_db(state):
     async with state.proxy() as data:
-        cursor.execute('''UPDATE subtopics SET 
-        title = "{title}", 
+        cursor.execute('''UPDATE subtopics SET  
         head = "{head}", 
-        description = "{description}" 
-        WHERE ID_subtopic = "{subtopic_id}"'''.format(title=data['title'],
-                                                      head=data['head'],
+        description = '{description}' 
+        WHERE ID_subtopic = "{subtopic_id}"'''.format(head=data['head'],
                                                       description=data['description'],
                                                       subtopic_id=data['subtopic_id']))
+    base.commit()
+
+
+async def delete_subtopic(subtopic_id):
+    cursor.execute(f'DELETE FROM subtopics WHERE ID_subtopic = "{subtopic_id}"')
+    base.commit()
+
+
+async def delete_topic(topic_id):
+    cursor.execute(f'DELETE FROM subtopics WHERE topic = "{topic_id}"')
+    cursor.execute(f'DELETE FROM topics WHERE ID_topic = "{topic_id}"')
     base.commit()

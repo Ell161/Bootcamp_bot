@@ -8,6 +8,7 @@ async def inline_keyboard_chapters() -> InlineKeyboardMarkup:
     for topic in chapters_list:
         button = InlineKeyboardButton(text=f'{topic[1]}', callback_data=f'topics {topic[0]}')
         ikboard_chapters.add(button)
+    ikboard_chapters.add(InlineKeyboardButton(text='📚 Заметки', callback_data='all_notes'))
     return ikboard_chapters
 
 
