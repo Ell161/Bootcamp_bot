@@ -1,6 +1,4 @@
-import re
-from typing import Dict, Any
-
+import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
@@ -13,6 +11,13 @@ from Bootcamp_bot.config import TOKEN_API, admin_id
 storage = MemoryStorage()
 bot = Bot(TOKEN_API, parse_mode='HTML')
 dp = Dispatcher(bot, storage=storage)
+logging.basicConfig(
+    filename="bootcamp_bot.log",
+    level=logging.ERROR,
+    filemode='a',
+    format="%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s",
+    datefmt='%H:%M:%S'
+    )
 
 
 class FSMTopics(StatesGroup):
@@ -379,6 +384,8 @@ async def content_desc(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.message_handler()
 async def empty(message: types.Message):
+    """The function processes any user messages that are not related to the standard functionality"""
+
     await message.answer(text=variables.empty)
     await message.delete()
 
