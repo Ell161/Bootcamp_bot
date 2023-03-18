@@ -76,9 +76,9 @@ async def command_help(message: types.Message) -> None:
 async def command_content(message: types.Message) -> None:
     """TThe function outputs a list of chapters"""
 
+    await message.delete()
     keyboard_content = await keyboards.inline_keyboard_chapters()
     await bot.send_message(chat_id=message.from_user.id, text=variables.content, reply_markup=keyboard_content)
-    await message.delete()
 
 
 @dp.message_handler(commands=['change'])
@@ -289,7 +289,7 @@ async def content_desc(callback: types.CallbackQuery, state: FSMContext):
                 await callback.message.answer(text='\n___________________________________________\n'.join(notes),
                                               reply_markup=keyboards.ikeyboard_close_notes)
             else:
-                await callback.answer(text=variables.not_info)
+                await callback.message.answer(text=variables.not_info)
 
         case 'topics':
             """Displaying a list of chapters and comments on them"""

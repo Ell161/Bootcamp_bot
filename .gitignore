@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+bootcamp_db.db
 config.py
 # Distribution / packaging
 .Python
